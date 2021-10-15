@@ -3,20 +3,28 @@ library expandable_listtile;
 import 'package:flutter/material.dart';
 
 class ExpandableListTile extends StatefulWidget {
-  final Widget? leading;
   final Widget title;
-  final IconData iconData;
-  final Widget? subTitle;
   final Widget child;
+  final IconData iconData;
+  final bool isExpanded;
+  final Widget? leading;
+  final Widget? subTitle;
+  final VoidCallback? onExpanded;
+  final VoidCallback? onCollapsed;
 
   const ExpandableListTile({
     Key? key,
-    this.leading,
     required this.title,
-    this.iconData = Icons.keyboard_arrow_up,
-    this.subTitle,
     required this.child,
-  }) : super(key: key);
+    this.iconData = Icons.keyboard_arrow_up,
+    this.isExpanded = false,
+    this.leading,
+    this.subTitle,
+    this.onExpanded,
+    this.onCollapsed,
+  })  : assert((onExpanded == null && onCollapsed == null) ||
+            (onExpanded != null && onCollapsed != null)),
+        super(key: key);
 
   @override
   State<StatefulWidget> createState() => ExpandableListTileState();
@@ -28,13 +36,14 @@ class ExpandableListTileState extends State<ExpandableListTile>
   late final Animation<double> _iconAnimation;
   late final AnimationController _listController;
   late final Animation<double> _listAnimation;
+  late final bool _hasCallbacks;
 
   @override
   void initState() {
     _iconController = AnimationController(
       vsync: this,
       duration: kThemeAnimationDuration,
-      value: 0, // initially closed
+      value: widget.isExpanded ? 1.0 : 0.0,
       upperBound: 0.5, // 1/2 rotation
     );
     _iconAnimation = CurvedAnimation(
@@ -44,12 +53,16 @@ class ExpandableListTileState extends State<ExpandableListTile>
     _listController = AnimationController(
       vsync: this,
       duration: kThemeAnimationDuration,
-      value: 0, // initially not visible
+      value: widget.isExpanded ? 1.0 : 0.0,
     );
     _listAnimation = CurvedAnimation(
       parent: _listController,
       curve: Curves.linear,
     );
+    _hasCallbacks = widget.onCollapsed != null && widget.onExpanded != null;
+    if (_hasCallbacks) {
+      _listController.addStatusListener(_statusListener);
+    }
     super.initState();
   }
 
@@ -85,8 +98,20 @@ class ExpandableListTileState extends State<ExpandableListTile>
     }
   }
 
+  void _statusListener(AnimationStatus status) {
+    if (status == AnimationStatus.completed) {
+      widget.onExpanded!();
+    }
+    if (status == AnimationStatus.dismissed) {
+      widget.onCollapsed!();
+    }
+  }
+
   @override
   void dispose() {
+    if (_hasCallbacks) {
+      _listController.removeStatusListener(_statusListener);
+    }
     _listController.dispose();
     _iconController.dispose();
     super.dispose();
