@@ -3,7 +3,7 @@ library expandable_listtile;
 import 'package:flutter/material.dart';
 
 class ExpandableListTile extends StatefulWidget {
-  final Widget title;
+  final Widget? title;
   final Widget child;
   final IconData iconData;
   final bool isExpanded;
@@ -14,7 +14,7 @@ class ExpandableListTile extends StatefulWidget {
 
   const ExpandableListTile({
     Key? key,
-    required this.title,
+    this.title,
     required this.child,
     this.iconData = Icons.keyboard_arrow_up,
     this.isExpanded = false,
